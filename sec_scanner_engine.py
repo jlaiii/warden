@@ -687,12 +687,21 @@ class HiddenServiceScanner(BaseScanner):
                     try:
                         img_path, _ = winreg.QueryValueEx(svc_key, "ImagePath")
                         start_val, _ = winreg.QueryValueEx(svc_key, "Start")
+                        # Type: 1=SERVICE_KERNEL_DRIVER, 2=SERVICE_FILE_SYSTEM_DRIVER
+                        #       16=SERVICE_WIN32_OWN_PROCESS, 32=SERVICE_WIN32_SHARE_PROCESS
+                        # Only type >= 16 are visible via SCM
+                        try:
+                            type_val, _ = winreg.QueryValueEx(svc_key, "Type")
+                            svc_type = int(type_val) if type_val is not None else 0
+                        except Exception:
+                            svc_type = 0
                         reg_details[svc_name] = {
                             "image_path": str(img_path),
                             "start": int(start_val) if start_val is not None else -1,
+                            "type": svc_type,
                         }
                     except Exception:
-                        reg_details[svc_name] = {"image_path": "?", "start": -1}
+                        reg_details[svc_name] = {"image_path": "?", "start": -1, "type": 0}
                     winreg.CloseKey(svc_key)
                 except Exception:
                     continue
@@ -701,29 +710,54 @@ class HiddenServiceScanner(BaseScanner):
             log.debug("Registry service enumeration failed: %s", e)
 
         # Filter: boot-start (0) and system-start (1) drivers are kernel drivers
-        # that SCM does NOT enumerate by design. Only flag Automatic (2) or
-        # Manual (3) services missing from SCM as suspicious.
+        # that SCM does NOT enumerate by design. Also skip entries without ImagePath
+        # or Start values — those are driver groups/filter instances, not real services.
+        # Only flag Automatic (2) or Manual (3) services missing from SCM as suspicious.
         hidden = reg_services - scm_services
         real_hidden = []
+        skipped_boot = 0
+        skipped_nodata = 0
         for name in hidden:
             detail = reg_details.get(name, {})
             start = detail.get("start", -1)
-            # Only flag services that SHOULD be visible via SCM (Automatic/Manual)
-            if start in (2, 3, -1):
+            img = detail.get("image_path", "?")
+            # SCM's EnumServicesStatusEx only enumerates services with Type exactly
+            # 0x10 (SERVICE_WIN32_OWN_PROCESS) or 0x20 (SERVICE_WIN32_SHARE_PROCESS)
+            # or the combination 0x30. Everything else is a kernel driver, file-system
+            # driver, user-service, or other type that SCM intentionally hides.
+            svc_type = detail.get("type", 0)
+            is_pure_win32 = svc_type in (0x10, 0x20, 0x30)
+            if not is_pure_win32:
+                skipped_boot += 1
+                continue
+            # Skip boot/system drivers (SCM deliberately hides them)
+            if start in (0, 1):
+                skipped_boot += 1
+                continue
+            # Skip entries without ImagePath — not real services
+            if img == "?" or not img.strip():
+                skipped_nodata += 1
+                continue
+            # Skip entries where we couldn't read Start value — unknown status
+            if start == -1:
+                skipped_nodata += 1
+                continue
+            # Only flag Automatic/Manual Win32 services (these MUST be SCM-visible)
+            if start in (2, 3):
                 real_hidden.append(name)
                 self._add(
                     f"Hidden service: {name}",
                     Severity.HIGH,
                     f"Service '{name}' exists in registry (HKLM\\SYSTEM\\CurrentControlSet\\Services) "
                     f"but is NOT visible to the Service Control Manager.\n"
-                    f"ImagePath: {detail.get('image_path', '?')}\n"
-                    f"Start: {['Boot','System','Automatic','Manual','Disabled'].get(start, str(start))}\n"
+                    f"ImagePath: {img}\n"
+                    f"Start: {({0:'Boot',1:'System',2:'Automatic',3:'Manual',4:'Disabled'}.get(start, str(start)))}\n"
                     f"This may indicate a rootkit that filters SCM enumeration.",
-                    {"service": name, "image_path": detail.get("image_path", "?"), "start": start},
+                    {"service": name, "image_path": img, "start": start, "type": svc_type},
                 )
         if not real_hidden:
-            log.debug("Service cross-view: clean — %d services (%d filtered boot/system drivers)",
-                     len(scm_services), len(hidden) - len(real_hidden))
+            log.debug("Service cross-view: clean — %d services (%d boot/system, %d no-data filtered)",
+                     len(scm_services), skipped_boot, skipped_nodata)
 
 
 # ---------------------------------------------------------------------------
