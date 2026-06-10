@@ -1,7 +1,17 @@
 # Warden — Windows Anti-Rootkit Scanner
 
+<p align="center">
+  <a href="https://jlaiii.github.io/warden/"><strong>🌐 jlaiii.github.io/warden</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/jlaiii/warden">💻 github.com/jlaiii/warden</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/jlaiii/warden/blob/main/LICENSE">📄 MIT</a>
+</p>
+
 A Python-based anti-rootkit scanner with a Windows Task Manager-style GUI.  
 Cross-view detection engine inspired by GMER — compares multiple system enumeration methods to find rootkits hiding processes, threads, modules, services, files, registry keys, and more.
+
+**[🌐 Visit the website →](https://jlaiii.github.io/warden/)** for full documentation, scanner details, and live demos.
 
 ## Features
 

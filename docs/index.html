@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden — Windows Anti-Rootkit Scanner</title>
+    <meta name="description" content="Warden is a Python-based Windows anti-rootkit scanner with a Task Manager GUI. Cross-view detection engine finds hidden processes, threads, modules, services, files, MBR bootkits, ADS, registry keys, and inline hooks.">
+    <meta name="keywords" content="anti-rootkit, rootkit scanner, GMER, Windows security, hidden process detection, cross-view, Python, tkinter, ctypes, NT syscalls">
+    <meta name="author" content="Warden Contributors">
+    <meta property="og:title" content="Warden — Windows Anti-Rootkit Scanner">
+    <meta property="og:description" content="Cross-view rootkit detection. Find what's hiding on your system.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://jlaiii.github.io/warden/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Warden — Windows Anti-Rootkit Scanner">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='56' font-size='56'>🛡️</text></svg>">
+
+    <style>
+        /* ── Reset & Base ─────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:           #0d1117;
+            --bg-elevated:  #161b22;
+            --bg-card:      #1c2129;
+            --border:       #30363d;
+            --text:         #e6edf3;
+            --text-muted:   #8b949e;
+            --text-dim:     #6e7681;
+            --accent:       #58a6ff;
+            --accent-hover: #79c0ff;
+            --green:        #3fb950;
+            --green-bg:     rgba(63,185,80,0.12);
+            --orange:       #d29922;
+            --orange-bg:    rgba(210,153,34,0.12);
+            --red:          #f85149;
+            --red-bg:       rgba(248,81,73,0.12);
+            --purple:       #a371f7;
+            --purple-bg:    rgba(163,113,247,0.12);
+            --font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --mono:         'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            --radius:       8px;
+            --radius-lg:    14px;
+            --max-w:        1100px;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Navigation ───────────────────────────────────────────── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(13,17,23,0.85); backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        nav .logo { display: flex; align-items: center; gap: 0.6rem; }
+        nav .logo .icon { font-size: 1.6rem; }
+        nav .logo .name { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
+        nav .links { display: flex; gap: 1.8rem; list-style: none; }
+        nav .links a {
+            color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
+            transition: color 0.2s; font-weight: 500;
+        }
+        nav .links a:hover { color: var(--text); }
+        nav .cta a {
+            background: var(--accent); color: #fff; padding: 0.4rem 1.1rem;
+            border-radius: 6px; font-weight: 600; font-size: 0.85rem;
+            text-decoration: none; transition: background 0.2s; white-space: nowrap;
+        }
+        nav .cta a:hover { background: var(--accent-hover); }
+
+        /* ── Hero ──────────────────────────────────────────────────── */
+        .hero {
+            padding: 8rem 1.5rem 5rem; text-align: center; max-width: 800px;
+            margin: 0 auto;
+        }
+        .hero .badge {
+            display: inline-block; padding: 0.35rem 0.9rem;
+            background: var(--green-bg); color: var(--green);
+            border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+            letter-spacing: 0.03em; margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: clamp(2.6rem, 6vw, 4rem); font-weight: 800;
+            letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1.2rem;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero .subtitle {
+            font-size: 1.2rem; color: var(--text-muted); max-width: 560px;
+            margin: 0 auto 2.2rem; line-height: 1.6;
+        }
+        .hero .actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+        .hero .btn {
+            padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600;
+            font-size: 0.95rem; text-decoration: none; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 18px rgba(88,166,255,0.3); }
+        .btn-outline { border: 1.5px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--text-muted); background: var(--bg-elevated); }
+
+        /* ── Sections ──────────────────────────────────────────────── */
+        section { padding: 4rem 1.5rem; }
+        .container { max-width: var(--max-w); margin: 0 auto; }
+        .section-label {
+            font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.7rem;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 700;
+            letter-spacing: -0.02em; margin-bottom: 1rem;
+        }
+        .section-desc {
+            color: var(--text-muted); font-size: 1.05rem; max-width: 600px;
+            margin-bottom: 2.5rem;
+        }
+
+        /* ── Feature Grid ──────────────────────────────────────────── */
+        .features {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.2rem;
+        }
+        .feature-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.6rem;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .feature-card:hover { border-color: var(--text-dim); transform: translateY(-2px); }
+        .feature-card .icon { font-size: 1.8rem; margin-bottom: 0.6rem; }
+        .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem; }
+        .feature-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+
+        /* ── Scanner Table ─────────────────────────────────────────── */
+        .table-wrap {
+            overflow-x: auto; border: 1px solid var(--border);
+            border-radius: var(--radius-lg); background: var(--bg-card);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th {
+            text-align: left; padding: 0.85rem 1.1rem; font-weight: 600;
+            color: var(--text-muted); border-bottom: 1px solid var(--border);
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+            background: var(--bg-elevated);
+        }
+        td { padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.015); }
+        .severity-dot {
+            display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+            margin-right: 0.4rem; vertical-align: middle;
+        }
+        .sev-crit { background: var(--red); box-shadow: 0 0 6px rgba(248,81,73,0.5); }
+        .sev-high { background: var(--orange); box-shadow: 0 0 6px rgba(210,153,34,0.5); }
+        .sev-med  { background: #f0c040; box-shadow: 0 0 6px rgba(240,192,64,0.5); }
+        .sev-low  { background: var(--accent); }
+        .sev-info { background: var(--text-dim); }
+
+        /* ── Code Block ────────────────────────────────────────────── */
+        .code-block {
+            background: #0d1117; border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.4rem 1.6rem;
+            font-family: var(--mono); font-size: 0.85rem; line-height: 1.7;
+            overflow-x: auto; color: #c9d1d9;
+        }
+        .code-block .prompt { color: var(--green); user-select: none; }
+        .code-block .cmd { color: var(--accent); }
+        .code-block .flag { color: var(--orange); }
+        .code-block .comment { color: var(--text-dim); }
+
+        /* ── Tabs Carousel ─────────────────────────────────────────── */
+        .tabs-showcase {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.5rem; margin-bottom: 2rem;
+        }
+        .tab-pill {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 100px; padding: 0.5rem 1rem; text-align: center;
+            font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .tab-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .tab-pill:hover:not(.active) { border-color: var(--text-dim); color: var(--text); }
+
+        /* ── Architecture Diagram ──────────────────────────────────── */
+        .arch {
+            display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center;
+            align-items: center; margin: 2rem 0;
+        }
+        .arch-box {
+            background: var(--bg-card); border: 1.5px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.2rem 1.4rem;
+            text-align: center; min-width: 150px;
+        }
+        .arch-box .arch-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+        .arch-box .arch-name { font-weight: 700; font-size: 0.9rem; }
+        .arch-box .arch-desc { color: var(--text-dim); font-size: 0.75rem; margin-top: 0.15rem; }
+        .arch-arrow { color: var(--text-dim); font-size: 1.4rem; font-weight: 300; }
+
+        /* ── Stats Bar ─────────────────────────────────────────────── */
+        .stats {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem; margin: 2rem 0;
+        }
+        .stat {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.3rem; text-align: center;
+        }
+        .stat .value { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+        .stat .label { color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem; }
+
+        /* ── Footer ────────────────────────────────────────────────── */
+        footer {
+            border-top: 1px solid var(--border); padding: 2.5rem 1.5rem;
+            text-align: center; color: var(--text-dim); font-size: 0.85rem;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+        footer .footer-links { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+
+        /* ── Mobile ────────────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            nav .links { display: none; }
+            .hero { padding-top: 6rem; }
+            .hero h1 { font-size: 2.2rem; }
+            .arch { flex-direction: column; }
+            .arch-arrow { transform: rotate(90deg); }
+        }
+    </style>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ── Navigation ───────────────────────────────────────────────────── -->
+<nav>
+    <div class="logo">
+        <span class="icon">🛡️</span>
+        <span class="name">Warden</span>
+    </div>
+    <ul class="links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#scanners">Scanners</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+    </ul>
+    <div class="cta">
+        <a href="https://github.com/jlaiii/warden" target="_blank" rel="noopener">View on GitHub →</a>
+    </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="badge">✨ Open Source — MIT Licensed</div>
+    <h1>See what's <span class="gradient">hiding</span> on your system</h1>
+    <p class="subtitle">
+        Warden is a Windows anti-rootkit scanner that uses <strong>cross-view detection</strong>
+        to find hidden processes, threads, modules, services, files, bootkits,
+        alternate data streams, registry keys, and inline API hooks — all from Python.
+    </p>
+    <div class="actions">
+        <a href="https://github.com/jlaiii/warden" class="btn btn-primary" target="_blank" rel="noopener">
+            ⬇ Download from GitHub
+        </a>
+        <a href="#install" class="btn btn-outline">
+            📖 Installation Guide
+        </a>
+    </div>
+</section>
+
+<!-- ── Stats ────────────────────────────────────────────────────────── -->
+<section>
+    <div class="container">
+        <div class="stats">
+            <div class="stat">
+                <div class="value" style="color:var(--accent);">12</div>
+                <div class="label">Security Scanners</div>
+            </div>
+            <div class="stat">
+                <div class="value" style="color:var(--green);">8</div>
+                <div class="label">Task Manager Tabs</div>
+            </div>
+            <div class="stat">
+                <div class="value" style="color:var(--purple);">2</div>
+                <div class="label">Detection Paths<br><span style="font-size:0.7rem;">(user-mode + NT kernel)</span></div>
+            </div>
+            <div class="stat">
+                <div class="value" style="color:var(--orange);">0</div>
+                <div class="label">External Dependencies<br><span style="font-size:0.7rem;">(beyond psutil)</span></div>
+            </div>
+            <div class="stat">
+                <div class="value" style="color:var(--green);">6K+</div>
+                <div class="label">Lines of Python</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Features ─────────────────────────────────────────────────────── -->
+<section id="features" style="background:var(--bg-elevated);">
+    <div class="container">
+        <div class="section-label">Features</div>
+        <h2 class="section-title">Everything you need to inspect your system</h2>
+        <p class="section-desc">
+            Warden combines a 1:1 Windows Task Manager clone with a full anti-rootkit
+            security suite — all in a single .py file.
+        </p>
+        <div class="features">
+            <div class="feature-card">
+                <div class="icon">🔍</div>
+                <h3>Cross-View Detection</h3>
+                <p>Compares user-mode API results against raw NT kernel syscalls. If a process shows up via <code>NtQuerySystemInformation</code> but not psutil, it's hidden.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🧵</div>
+                <h3>12 Scanner Categories</h3>
+                <p>Hidden processes, threads, modules/DLLs, services, files, MBR bootkits, ADS, registry keys, inline hooks — plus SSDT/IDT/IRP awareness.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📊</div>
+                <h3>Full Task Manager GUI</h3>
+                <p>8 tabs including Processes (with smart grouping), Performance graphs, App History, Details, Services, Startup, Users, and Security.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🛡️</div>
+                <h3>Anti-Detection System</h3>
+                <p>Randomized mutex names, temp-copy self-protection with different file hashes, XOR+base64 string obfuscation — malware can't block what it can't find.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">⚡</div>
+                <h3>Dual Mode</h3>
+                <p>Full GUI via tkinter or CLI mode with text progress bars and JSON output. Works as standalone scanner or integrated tab.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🔬</div>
+                <h3>Inline Hook Detection</h3>
+                <p>Compares on-disk .text sections of critical DLLs against their in-memory code via ReadProcessMemory. Detects API hooks in ntdll, kernel32, and more.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Scanner Categories ───────────────────────────────────────────── -->
+<section id="scanners">
+    <div class="container">
+        <div class="section-label">Detection Engine</div>
+        <h2 class="section-title">12 security scanners, one click</h2>
+        <p class="section-desc">
+            Each scanner uses two different enumeration paths. Any discrepancy between them
+            signals a potential rootkit hiding something.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scanner</th>
+                        <th>Severity</th>
+                        <th>Admin</th>
+                        <th>Detection Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Hidden Processes</strong></td>
+                        <td><span class="severity-dot sev-crit"></span>Critical</td>
+                        <td>Yes</td>
+                        <td><code>psutil.pids()</code> vs <code>NtQuerySystemInformation</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hidden Threads</strong></td>
+                        <td><span class="severity-dot sev-crit"></span>Critical</td>
+                        <td>Yes</td>
+                        <td><code>CreateToolhelp32Snapshot</code> vs NT syscall</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hidden Modules / DLLs</strong></td>
+                        <td><span class="severity-dot sev-high"></span>High</td>
+                        <td>Yes</td>
+                        <td><code>Module32First</code> vs <code>SystemModuleInformation</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hidden Services</strong></td>
+                        <td><span class="severity-dot sev-high"></span>High</td>
+                        <td>No</td>
+                        <td>SCM vs raw HKLM registry</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hidden Files</strong></td>
+                        <td><span class="severity-dot sev-high"></span>High</td>
+                        <td>No</td>
+                        <td><code>FindFirstFile</code> vs <code>NtQueryDirectoryFile</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hidden Disk Sectors</strong></td>
+                        <td><span class="severity-dot sev-high"></span>High</td>
+                        <td>Yes</td>
+                        <td>MBR boot signature check via <code>\\.\PhysicalDrive0</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alternate Data Streams</strong></td>
+                        <td><span class="severity-dot sev-med"></span>Medium</td>
+                        <td>No</td>
+                        <td><code>FindFirstStreamW</code> on system directories</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hidden Registry Keys</strong></td>
+                        <td><span class="severity-dot sev-high"></span>High</td>
+                        <td>No</td>
+                        <td><code>RegEnumKey</code> vs <code>NtEnumerateKey</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inline Hooks</strong></td>
+                        <td><span class="severity-dot sev-crit"></span>Critical</td>
+                        <td>No</td>
+                        <td>On-disk .text vs in-memory <code>ReadProcessMemory</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SSDT Hooks</strong></td>
+                        <td><span class="severity-dot sev-info"></span>Info</td>
+                        <td>—</td>
+                        <td>Requires kernel driver (informational)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IDT Hooks</strong></td>
+                        <td><span class="severity-dot sev-info"></span>Info</td>
+                        <td>—</td>
+                        <td>Requires kernel driver (informational)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IRP Hooks</strong></td>
+                        <td><span class="severity-dot sev-info"></span>Info</td>
+                        <td>—</td>
+                        <td>Requires kernel driver (informational)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ── How It Works ─────────────────────────────────────────────────── -->
+<section style="background:var(--bg-elevated);">
+    <div class="container">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">Cross-view detection explained</h2>
+        <p class="section-desc">
+            Rootkits hide by hooking user-mode API functions. Warden calls the same
+            function through <em>two different paths</em> — if one path sees something
+            the other doesn't, it's flagged.
+        </p>
+        <div class="arch">
+            <div class="arch-box">
+                <div class="arch-icon">🖥️</div>
+                <div class="arch-name">User-Mode API</div>
+                <div class="arch-desc">psutil / Win32<br><small>May be hooked</small></div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box" style="border-color:var(--purple);">
+                <div class="arch-icon">🔍</div>
+                <div class="arch-name">Cross-View Diff</div>
+                <div class="arch-desc">Compare results<br><small>Find discrepancies</small></div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box" style="border-color:var(--red);">
+                <div class="arch-icon">⚠️</div>
+                <div class="arch-name">Hidden Items Found</div>
+                <div class="arch-desc">Flagged as rootkit<br><small>Critical / High</small></div>
+            </div>
+            <div class="arch-arrow">←</div>
+            <div class="arch-box">
+                <div class="arch-icon">⚙️</div>
+                <div class="arch-name">NT Kernel Syscall</div>
+                <div class="arch-desc">ntdll via ctypes<br><small>Raw, unfiltered</small></div>
+            </div>
+        </div>
+        <p style="text-align:center;color:var(--text-muted);margin-top:1.5rem;font-size:0.9rem;">
+            The user-mode path goes through documented APIs that malware can intercept.<br>
+            The NT syscall path calls the kernel directly, bypassing user-mode hooks entirely.
+        </p>
+    </div>
+</section>
+
+<!-- ── Installation ─────────────────────────────────────────────────── -->
+<section id="install">
+    <div class="container">
+        <div class="section-label">Get Started</div>
+        <h2 class="section-title">Installation</h2>
+        <p class="section-desc">
+            Zero external dependencies beyond psutil. Runs on any Windows 10/11 machine with Python 3.10+.
+        </p>
+
+        <div class="code-block">
+<span class="comment"># Clone the repository</span>
+<span class="prompt">$</span> <span class="cmd">git</span> clone https://github.com/jlaiii/warden.git
+<span class="prompt">$</span> <span class="cmd">cd</span> warden
+
+<span class="comment"># Install the only dependency</span>
+<span class="prompt">$</span> <span class="cmd">pip</span> install psutil
+
+<span class="comment"># Launch the Task Manager with Security tab</span>
+<span class="prompt">$</span> <span class="cmd">python</span> task_manager.py
+
+<span class="comment"># Or run the standalone scanner — quick scan</span>
+<span class="prompt">$</span> <span class="cmd">python</span> warden_scanner.py <span class="flag">--cli --quick</span>
+
+<span class="comment"># Full deep scan with JSON output</span>
+<span class="prompt">$</span> <span class="cmd">python</span> warden_scanner.py <span class="flag">--json -o</span> report.json
+        </div>
+
+        <p style="margin-top:1.5rem;text-align:center;color:var(--text-muted);font-size:0.9rem;">
+            ⚠️ <strong>Run as Administrator</strong> for full detection capability — NT-level process scanning,
+            MBR checks, and kernel module enumeration all require elevated privileges.
+        </p>
+    </div>
+</section>
+
+<!-- ── Task Manager Tabs ────────────────────────────────────────────── -->
+<section style="background:var(--bg-elevated);">
+    <div class="container">
+        <div class="section-label">Task Manager</div>
+        <h2 class="section-title">8 fully-featured tabs</h2>
+        <p class="section-desc">
+            Warden includes a complete Windows Task Manager clone alongside the security scanner.
+        </p>
+        <div class="tabs-showcase">
+            <div class="tab-pill active">📋 Processes</div>
+            <div class="tab-pill">📈 Performance</div>
+            <div class="tab-pill">📜 App History</div>
+            <div class="tab-pill">🔬 Details</div>
+            <div class="tab-pill">⚙️ Services</div>
+            <div class="tab-pill">🚀 Startup</div>
+            <div class="tab-pill">👤 Users</div>
+            <div class="tab-pill" style="border-color:var(--red);color:var(--red);">🛡️ Security</div>
+        </div>
+        <div class="features">
+            <div class="feature-card">
+                <div class="icon">📋</div>
+                <h3>Smart Process Grouping</h3>
+                <p>Same-name processes auto-collapse into groups with aggregated CPU, memory, threads, and handles — just like the real Task Manager. Groups persist expanded state across refreshes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📈</div>
+                <h3>Live Performance Graphs</h3>
+                <p>Per-core CPU bars, memory composition, disk I/O, network throughput, and GPU monitoring via nvidia-smi. Scrollable dashboard with real-time updates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">⚙️</div>
+                <h3>Service Control</h3>
+                <p>Start, stop, and restart Windows services. Color-coded by status. Search and filter 270+ services. Admin-elevated controls.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🔧</div>
+                <h3>Process Actions</h3>
+                <p>End task, end process tree, set priority class (Realtime through Low), set CPU affinity, create dump files via MiniDumpWriteDump, analyze wait chains, open file location, search online.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Architecture ─────────────────────────────────────────────────── -->
+<section id="architecture">
+    <div class="container">
+        <div class="section-label">Architecture</div>
+        <h2 class="section-title">Clean, modular design</h2>
+        <p class="section-desc">
+            Four Python files, each with a clear responsibility. No framework, no bloat.
+        </p>
+        <div class="features">
+            <div class="feature-card">
+                <div class="icon">🖥️</div>
+                <h3><code>task_manager.py</code></h3>
+                <p>Main application — 8-tab GUI built with tkinter/ttk. Includes the complete Task Manager clone and integrated Security tab. 3,600+ lines.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🔬</div>
+                <h3><code>sec_scanner_engine.py</code></h3>
+                <p>Core detection engine — all 12 anti-rootkit scanners, NT API wrappers via ctypes, cross-view data model, and scan orchestrator. 1,450+ lines.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🛡️</div>
+                <h3><code>anti_detect.py</code></h3>
+                <p>Anti-detection system — randomized mutex, XOR+base64 string obfuscation, temp-copy self-protection with hash randomization, atexit cleanup.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🚀</div>
+                <h3><code>warden_scanner.py</code></h3>
+                <p>Standalone interface — CLI mode with progress bars and text/JSON output, plus a self-contained tkinter GUI mode. Supports quick and full scan presets.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── CLI Preview ──────────────────────────────────────────────────── -->
+<section style="background:var(--bg-elevated);">
+    <div class="container">
+        <div class="section-label">CLI Mode</div>
+        <h2 class="section-title">Command-line or GUI — your choice</h2>
+        <p class="section-desc">
+            Run quick scans from the terminal or integrate Warden into automated workflows with JSON output.
+        </p>
+        <div class="code-block">
+<span class="prompt">$</span> <span class="cmd">python</span> warden_scanner.py <span class="flag">--cli --quick</span>
+
+[Hermes GMER] Quick Scan
+   Admin: [NO - limited]
+   Started: 2026-06-10 01:20:06
+
+   [##############################] 5/5 — Hidden Registry Keys
+
+======================================================================
+  Warden Security Scanner — Scan Report
+======================================================================
+  Scan time:    0.03s
+  Admin mode:   No (limited scan)
+  Total issues: 1
+    Critical:   0
+    High:       0
+    Medium:     0
+    Low:        0
+    Info:       1
+======================================================================
+
+  [Hidden Processes] — 1 finding(s):
+    [i] Admin privileges required for NT-level process scan
+
+  [Hidden Services] — 0 findings
+  Service cross-view: clean — 278 services (499 boot/system filtered)
+======================================================================
+
+<span style="color:var(--green);">✅ System appears clean.</span>
+        </div>
+    </div>
+</section>
+
+<!-- ── Community ────────────────────────────────────────────────────── -->
+<section id="community">
+    <div class="container" style="text-align:center;">
+        <div class="section-label">Get Involved</div>
+        <h2 class="section-title">Open source, open to all</h2>
+        <p class="section-desc" style="margin:0 auto 2rem;">
+            Warden is MIT licensed. Bug reports, feature requests, and pull requests are welcome.
+        </p>
+        <div class="actions" style="justify-content:center;">
+            <a href="https://github.com/jlaiii/warden" class="btn btn-primary" target="_blank" rel="noopener">
+                ⭐ Star on GitHub
+            </a>
+            <a href="https://github.com/jlaiii/warden/issues" class="btn btn-outline" target="_blank" rel="noopener">
+                🐛 Report an Issue
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ───────────────────────────────────────────────────────── -->
+<footer>
+    <div class="footer-links">
+        <a href="https://github.com/jlaiii/warden" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/jlaiii/warden/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+        <a href="https://github.com/jlaiii/warden/issues" target="_blank" rel="noopener">Issues</a>
+        <a href="#install">Installation</a>
+    </div>
+    <p>
+        Built with ❤️ by <a href="https://github.com/jlaiii" target="_blank" rel="noopener">jlaiii</a> &amp;
+        <a href="https://claude.com/claude-code" target="_blank" rel="noopener">Claude Code</a>
+        &nbsp;·&nbsp; Inspired by <a href="http://www.gmer.net/" target="_blank" rel="noopener">GMER</a>
+    </p>
+    <p style="margin-top:0.4rem;font-size:0.78rem;">
+        © 2026 Warden Contributors. Windows is a registered trademark of Microsoft Corporation.
+    </p>
+</footer>
+
+</body>
+</html>
