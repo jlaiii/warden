@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Warden Task Manager v3 -- Windows Task Manager 1:1 Clone
+Warden Task Manager -- Windows Task Manager 1:1 Clone
 Built with tkinter + psutil + ctypes + winreg.
 
 Tabs:
@@ -91,7 +91,7 @@ logging.basicConfig(
 log = logging.getLogger("taskmgr")
 
 log.info("=" * 70)
-log.info("Warden Task Manager v3 starting -- %s", datetime.now().isoformat())
+log.info("Warden Task Manager starting -- %s", datetime.now().isoformat())
 log.info("Log file: %s", LOG_FILE)
 log.info("Python: %s  |  psutil: %s  |  Platform: %s %s",
          sys.version.split()[0], psutil.__version__, plat.system(), plat.release())
@@ -695,7 +695,7 @@ def build_process_tree(procs: list[ProcInfo]) -> dict[int, dict]:
 class TaskManager(Tk):
     def __init__(self):
         super().__init__()
-        self.title("Warden Task Manager v3")
+        self.title("Warden Task Manager")
         self.geometry("1280x800")
         self.minsize(950, 600)
 
@@ -781,7 +781,7 @@ class TaskManager(Tk):
         # auto-refresh
         self._start_auto_refresh()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
-        log.info("Warden Task Manager v3 ready -- %d tabs", self._notebook.index("end"))
+        log.info("Warden Task Manager ready -- %d tabs", self._notebook.index("end"))
 
     # -- menubar ------------------------------------------------------------
     def _build_menubar(self) -> None:
@@ -3554,9 +3554,11 @@ class TaskManager(Tk):
     def _show_about(self) -> None:
         mem = psutil.virtual_memory()
         info_text = (
-            f"Warden Task Manager v3\n\n"
+            f"Warden Task Manager\n\n"
             f"Windows Task Manager 1:1 Clone\n"
             f"Built with tkinter + psutil + ctypes + winreg\n\n"
+            f"Website: https://jlaiii.github.io/warden\n"
+            f"GitHub:  https://github.com/jlaiii/warden\n\n"
             f"Tabs:\n"
             f"  • Processes  -- tree/flat view, search, end task/tree, priority, affinity\n"
             f"  • Performance -- CPU (per-core), Memory, Disk, Network, GPU graphs\n"
@@ -3578,7 +3580,7 @@ class TaskManager(Tk):
 
     # -- shutdown -----------------------------------------------------------
     def _on_close(self) -> None:
-        log.info("Shutting down Warden Task Manager v3…")
+        log.info("Shutting down Warden Task Manager…")
         self._running = False
         if self._refresh_job:
             self.after_cancel(self._refresh_job)
@@ -3597,7 +3599,7 @@ def main():
     import time as _time
     start_ts = _time.time()
     log.info("-" * 70)
-    log.info("Launching Warden Task Manager v3")
+    log.info("Launching Warden Task Manager")
 
     # Request elevation
     elevate()
