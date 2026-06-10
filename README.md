@@ -1,4 +1,4 @@
-# Hermes GMER — Windows Anti-Rootkit Scanner
+# Warden — Windows Anti-Rootkit Scanner
 
 A Python-based anti-rootkit scanner with a Windows Task Manager-style GUI.  
 Cross-view detection engine inspired by GMER — compares multiple system enumeration methods to find rootkits hiding processes, threads, modules, services, files, registry keys, and more.
@@ -49,19 +49,19 @@ python task_manager.py
 
 ### GUI Mode (Scanner Only)
 ```bash
-python hermes_gmer.py
+python warden_scanner.py
 ```
 
 ### CLI Mode
 ```bash
 # Quick scan (5 priority scanners)
-python hermes_gmer.py --cli --quick
+python warden_scanner.py --cli --quick
 
 # Full scan (all 12 scanners)
-python hermes_gmer.py --cli
+python warden_scanner.py --cli
 
 # JSON output
-python hermes_gmer.py --json -o report.json
+python warden_scanner.py --json -o report.json
 ```
 
 ## Scanner Categories
@@ -84,10 +84,10 @@ python hermes_gmer.py --json -o report.json
 ## Architecture
 
 ```
-hermes-gmer/
+warden/
   task_manager.py          # Main app — 8-tab Task Manager with Security tab
   sec_scanner_engine.py    # Core — all 12 scanners, NT API wrappers, data model
-  hermes_gmer.py           # Standalone scanner (CLI + GUI modes)
+  warden_scanner.py           # Standalone scanner (CLI + GUI modes)
   anti_detect.py           # Anti-detection system (obfuscation, mutex, temp-copy)
   requirements.txt
 ```

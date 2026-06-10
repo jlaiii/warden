@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Hermes GMER — Standalone Anti-Rootkit Scanner
+Warden — Standalone Anti-Rootkit Scanner
 ===============================================
 Cross-view rootkit/hidden-item detection for Windows.
 Inspired by GMER's approach of comparing multiple enumeration methods.
 
 Usage:
-    python hermes_gmer.py                  # Interactive GUI mode
-    python hermes_gmer.py --cli            # Command-line text output
-    python hermes_gmer.py --cli --quick    # Quick scan (processes + services)
-    python hermes_gmer.py --json           # JSON report to stdout
-    python hermes_gmer.py --json --output report.json  # Save to file (quiet)
-    python hermes_gmer.py --cli --full     # Full deep scan (all 12 scanners)
+    python warden_scanner.py                  # Interactive GUI mode
+    python warden_scanner.py --cli            # Command-line text output
+    python warden_scanner.py --cli --quick    # Quick scan (processes + services)
+    python warden_scanner.py --json           # JSON report to stdout
+    python warden_scanner.py --json --output report.json  # Save to file (quiet)
+    python warden_scanner.py --cli --full     # Full deep scan (all 12 scanners)
 
 Scanner categories:
     Hidden Processes    — psutil vs NtQuerySystemInformation cross-view
@@ -94,12 +94,12 @@ def run_cli(quick: bool = False, json_mode: bool = False, output_path: str | Non
     Returns exit code: 0 = clean, 1 = issues found, 2 = error.
     """
     log.info("=" * 70)
-    log.info("Hermes GMER CLI Scan — %s", datetime.now().isoformat())
+    log.info("Warden CLI Scan — %s", datetime.now().isoformat())
     log.info("Admin: %s", is_admin())
     log.info("=" * 70)
 
     # Anti-detection
-    ad = AntiDetect(app_name="HermesGMER_CLI")
+    ad = AntiDetect(app_name="Warden_CLI")
     ad.arm()
 
     try:
@@ -117,7 +117,7 @@ def run_cli(quick: bool = False, json_mode: bool = False, output_path: str | Non
             mode_label = "Full Scan"
 
         if not json_mode:
-            print(f"\n[Hermes GMER] {mode_label}")
+            print(f"\n[Warden] {mode_label}")
             print(f"   Admin: {'[YES]' if is_admin() else '[NO - limited]'}")
             print(f"   Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             print(f"   Log: {LOG_FILE}\n")
@@ -198,12 +198,12 @@ class GMERGUI(Tk):
 
     def __init__(self):
         super().__init__()
-        self.title("Hermes GMER — Anti-Rootkit Scanner")
+        self.title("Warden — Anti-Rootkit Scanner")
         self.geometry("1100x700")
         self.minsize(800, 500)
 
         # Anti-detection
-        self._ad = AntiDetect(app_name="HermesGMER_GUI")
+        self._ad = AntiDetect(app_name="Warden_GUI")
         self._ad.arm()
 
         # Colors
@@ -240,7 +240,7 @@ class GMERGUI(Tk):
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
 
-        Label(header, text="🛡️ Hermes GMER", bg="#1a1a2e", fg="#4caf50",
+        Label(header, text="🛡️ Warden", bg="#1a1a2e", fg="#4caf50",
               font=("Segoe UI", 18, "bold")).pack(side="left", padx=(16, 8), pady=12)
 
         self._status_lbl = Label(
@@ -431,7 +431,7 @@ class GMERGUI(Tk):
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".csv", filetypes=[("CSV Files", "*.csv"), ("JSON Files", "*.json")],
-            initialfile=f"hermes_gmer_{datetime.now():%Y%m%d_%H%M%S}.csv",
+            initialfile=f"warden_scanner_{datetime.now():%Y%m%d_%H%M%S}.csv",
             parent=self)
         if not path:
             return
@@ -512,15 +512,15 @@ class GMERGUI(Tk):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Hermes GMER — Anti-Rootkit Scanner",
+        description="Warden — Anti-Rootkit Scanner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python hermes_gmer.py                     # GUI mode
-  python hermes_gmer.py --cli               # CLI text mode, full scan
-  python hermes_gmer.py --cli --quick       # Quick scan only
-  python hermes_gmer.py --json              # JSON output to stdout
-  python hermes_gmer.py --json -o report.json  # Save JSON report to file
+  python warden_scanner.py                     # GUI mode
+  python warden_scanner.py --cli               # CLI text mode, full scan
+  python warden_scanner.py --cli --quick       # Quick scan only
+  python warden_scanner.py --json              # JSON output to stdout
+  python warden_scanner.py --json -o report.json  # Save JSON report to file
         """,
     )
     parser.add_argument("--cli", action="store_true",

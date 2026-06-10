@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hermes Task Manager v3 -- Windows Task Manager 1:1 Clone
+Warden Task Manager v3 -- Windows Task Manager 1:1 Clone
 Built with tkinter + psutil + ctypes + winreg.
 
 Tabs:
@@ -91,7 +91,7 @@ logging.basicConfig(
 log = logging.getLogger("taskmgr")
 
 log.info("=" * 70)
-log.info("Hermes Task Manager v3 starting -- %s", datetime.now().isoformat())
+log.info("Warden Task Manager v3 starting -- %s", datetime.now().isoformat())
 log.info("Log file: %s", LOG_FILE)
 log.info("Python: %s  |  psutil: %s  |  Platform: %s %s",
          sys.version.split()[0], psutil.__version__, plat.system(), plat.release())
@@ -695,7 +695,7 @@ def build_process_tree(procs: list[ProcInfo]) -> dict[int, dict]:
 class TaskManager(Tk):
     def __init__(self):
         super().__init__()
-        self.title("Hermes Task Manager v3")
+        self.title("Warden Task Manager v3")
         self.geometry("1280x800")
         self.minsize(950, 600)
 
@@ -781,7 +781,7 @@ class TaskManager(Tk):
         # auto-refresh
         self._start_auto_refresh()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
-        log.info("Hermes Task Manager v3 ready -- %d tabs", self._notebook.index("end"))
+        log.info("Warden Task Manager v3 ready -- %d tabs", self._notebook.index("end"))
 
     # -- menubar ------------------------------------------------------------
     def _build_menubar(self) -> None:
@@ -843,7 +843,7 @@ class TaskManager(Tk):
         help_menu.add_command(label="View Logs", command=self._open_logs)
         help_menu.add_command(label="Open Log Folder", command=self._open_log_folder)
         help_menu.add_separator()
-        help_menu.add_command(label="About Hermes Task Manager", command=self._show_about)
+        help_menu.add_command(label="About Warden Task Manager", command=self._show_about)
         menubar.add_cascade(label="Help", menu=help_menu)
 
     # -- tab: Processes -----------------------------------------------------
@@ -2362,7 +2362,7 @@ class TaskManager(Tk):
         from tkinter import filedialog
         path = filedialog.asksaveasfilename(
             defaultextension=".csv", filetypes=[("CSV Files", "*.csv")],
-            initialfile=f"hermes_scan_{datetime.now():%Y%m%d_%H%M%S}.csv",
+            initialfile=f"warden_scan_{datetime.now():%Y%m%d_%H%M%S}.csv",
             parent=self)
         if not path:
             return
@@ -3554,7 +3554,7 @@ class TaskManager(Tk):
     def _show_about(self) -> None:
         mem = psutil.virtual_memory()
         info_text = (
-            f"Hermes Task Manager v3\n\n"
+            f"Warden Task Manager v3\n\n"
             f"Windows Task Manager 1:1 Clone\n"
             f"Built with tkinter + psutil + ctypes + winreg\n\n"
             f"Tabs:\n"
@@ -3574,11 +3574,11 @@ class TaskManager(Tk):
             f"Log file: {LOG_FILE}\n"
             f"Python: {sys.version.split()[0]}  |  psutil: {psutil.__version__}"
         )
-        messagebox.showinfo("About Hermes Task Manager", info_text, parent=self)
+        messagebox.showinfo("About Warden Task Manager", info_text, parent=self)
 
     # -- shutdown -----------------------------------------------------------
     def _on_close(self) -> None:
-        log.info("Shutting down Hermes Task Manager v3…")
+        log.info("Shutting down Warden Task Manager v3…")
         self._running = False
         if self._refresh_job:
             self.after_cancel(self._refresh_job)
@@ -3597,7 +3597,7 @@ def main():
     import time as _time
     start_ts = _time.time()
     log.info("-" * 70)
-    log.info("Launching Hermes Task Manager v3")
+    log.info("Launching Warden Task Manager v3")
 
     # Request elevation
     elevate()
@@ -3612,7 +3612,7 @@ def main():
         log.critical("FATAL ERROR!", exc_info=True)
         import traceback as _tb
         messagebox.showerror("Fatal Error",
-                             f"Hermes Task Manager crashed:\n\n{_tb.format_exc()}\n\n"
+                             f"Warden Task Manager crashed:\n\n{_tb.format_exc()}\n\n"
                              f"Check {LOG_FILE} for details.")
         raise
 

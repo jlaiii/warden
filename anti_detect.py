@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hermes Anti-Detection System
+Warden Anti-Detection System
 =============================
 Prevents malware from detecting or blocking the scanner by:
   - Obfuscating sensitive string literals (XOR + base64)
@@ -47,7 +47,7 @@ class AntiDetect:
     The atexit handler and signal handlers provide automatic cleanup.
     """
 
-    def __init__(self, app_name: str = "HermesGMER"):
+    def __init__(self, app_name: str = "Warden"):
         self._app_name = app_name
         self._armed = False
         self._mutex_name: str = ""
@@ -162,7 +162,7 @@ class AntiDetect:
     # ---- Randomized Window Class --------------------------------------------
 
     @staticmethod
-    def random_window_title(base: str = "Hermes Task Manager") -> str:
+    def random_window_title(base: str = "Warden Task Manager") -> str:
         """Return a window title with a random suffix to foil window-name detection.
 
         Malware often looks for windows with titles containing "GMER",
@@ -280,5 +280,5 @@ class StringObfuscator:
 _OBFUSCATED_STRINGS: dict[str, str] = {
     # Placeholder — populated at build time
     # "nt_query": base64(xor("NtQuerySystemInformation")),
-    # "app_name": base64(xor("HermesGMER")),
+    # "app_name": base64(xor("Warden")),
 }

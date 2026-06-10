@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hermes Security Scanner Engine -- Anti-Rootkit Cross-View Detection
+Warden Security Scanner Engine -- Anti-Rootkit Cross-View Detection
 ====================================================================
 Scans for:
   - Hidden processes    (psutil vs NtQuerySystemInformation)
@@ -1460,7 +1460,7 @@ class ScanOrchestrator:
 def print_report(report: ScanReport) -> None:
     """Print a ScanReport to stdout in human-readable format."""
     print(f"\n{'='*70}")
-    print(f"  Hermes Security Scanner — Scan Report")
+    print(f"  Warden Security Scanner — Scan Report")
     print(f"{'='*70}")
     print(f"  Scan time:    {report.scan_time:.2f}s")
     print(f"  Admin mode:   {'Yes' if report.admin_status else 'No (limited scan)'} ")
